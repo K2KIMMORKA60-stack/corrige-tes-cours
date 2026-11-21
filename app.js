@@ -9,6 +9,13 @@ const MOTEURS = [
 const PERIODES = [[21,"1 mois"],[63,"3 mois"],[126,"6 mois"],[250,"1 an"]];
 const TYPES = [["tout","Tout"],["action","Actions"],["indice","Indices"],["secteur","Secteurs"],["matiere","Matières premières"],["devise","Devises"],["crypto","Crypto"]];
 const REGIONS = ["Monde","USA","Europe","Asie","Amériques","Moyen-Orient"];
+const COULEURS = {"Pétrole":"#D9822B","Services pétroliers":"#C4622A","Raffinage":"#A9502F","Énergie":"#E8A33A",
+  "Indice":"#3D7BD9","Taux":"#5B5FC7","Dollar":"#2E9E6B","Devises":"#22A39A","Devises pétrole":"#4DB6AC",
+  "Tech":"#8E5BD6","Banque":"#2F8FC4","Industrie":"#7D8C99","Chimie":"#B8A42E","Services publics":"#6FA84B",
+  "Santé":"#E0607E","Conso":"#F08A5D","Conso de base":"#A97A55","Aérien":"#29A3D6","Croisières":"#1C7AA6",
+  "Transport":"#5B86B8","Auto":"#D64545","Mines d'or":"#D4AF37","Métaux précieux":"#E2C04A","Mines":"#9C6B3A",
+  "Métaux":"#C77B3F","Luxe":"#B5487A","Crypto":"#F2A900","Agriculture":"#8DB33A"};
+const couleur = s => COULEURS[s] || "#7D8C99";
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pct = (x, d=1) => (x>0?"+":"") + (x*100).toFixed(d).replace(".", ",") + " %";
@@ -78,8 +85,8 @@ function jauge(r){
 }
 function item(x){
   const sensi = `+1 % → ${x.beta>=0?"+":""}${x.beta.toFixed(2).replace(".",",")} %`;
-  return `<button class="item" data-t="${esc(x.a.t)}"><div style="min-width:0"><div class="nom">${esc(x.a.n)}</div>
-    <div class="meta">${esc(x.a.s)} · ${esc(x.a.r)} · ${sensi}</div></div>${jauge(x.r)}
+  return `<button class="item" style="--c:${couleur(x.a.s)}" data-t="${esc(x.a.t)}"><div style="min-width:0"><div class="nom">${esc(x.a.n)}</div>
+    <div class="meta"><span class="sect">${esc(x.a.s)}</span> · ${esc(x.a.r)} · ${sensi}</div></div>${jauge(x.r)}
     <div class="jour num ${cls(x.j1)}">${pct(x.j1)}</div></button>`;
 }
 
@@ -112,7 +119,7 @@ function rendreFamilles(){
     if(best<0.55) break; cl[bi]=cl[bi].concat(cl[bj]); cl.splice(bj,1); }
   const fam = cl.filter(c=>c.length>1).sort((a,b)=>b.length-a.length), seuls = cl.filter(c=>c.length===1).map(c=>c[0]);
   const nomFam = c => { const k={}; c.forEach(i=>{k[A[i].s]=(k[A[i].s]||0)+1;}); return Object.entries(k).sort((a,b)=>b[1]-a[1]).slice(0,2).map(e=>e[0]).join(" + "); };
-  const chip = i => { const j=variation(A[i],1); return `<button class="membre" data-t="${esc(A[i].t)}">${esc(A[i].n)}<span class="num ${cls(j)}">${pct(j)}</span></button>`; };
+  const chip = i => { const j=variation(A[i],1); return `<button class="membre" style="--c:${couleur(A[i].s)}" data-t="${esc(A[i].t)}">${esc(A[i].n)}<span class="num ${cls(j)}">${pct(j)}</span></button>`; };
   $("#contenu").innerHTML = `<p class="label" style="margin:0">Marchés qui montent et descendent ensemble (${PERIODES.find(p=>p[0]===st.win)[1]})</p>` +
     fam.map(c => { const moy = c.reduce((s,i)=>s+variation(A[i],1),0)/c.length, force = lien(c,c);
       const sx = (moy*100).toFixed(1).replace(".",",");
@@ -163,7 +170,14 @@ function rendreCtrl(){
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab===st.tab)));
   $("#q").hidden = st.tab!=="groupes";
 }
-function tout(){ rendreCtrl(); rendreMoteur(); (st.tab==="groupes"?rendreGroupes:rendreFamilles)(); }
+function rendreMosaique(){
+  const A = D.assets.slice().sort((a,b)=>a.s.localeCompare(b.s,"fr")||a.n.localeCompare(b.n,"fr"));
+  $("#mosaique").innerHTML = A.map(a => { const j=variation(a,1);
+    return `<button class="tuile${a.t===st.drv?" ref":""}" style="--c:${couleur(a.s)}" data-t="${esc(a.t)}" title="${esc(a.n)} · ${esc(a.s)} · ${pct(j)}" aria-label="${esc(a.n)}"><span class="${j>0.0005?"fl-up":j<-0.0005?"fl-down":""}"></span></button>`; }).join("");
+  const fam = [...new Set(A.map(a=>a.s))];
+  $("#legende-couleurs").innerHTML = fam.map(f=>`<span style="--c:${couleur(f)}">${esc(f)}</span>`).join("");
+}
+function tout(){ rendreCtrl(); rendreMosaique(); rendreMoteur(); (st.tab==="groupes"?rendreGroupes:rendreFamilles)(); }
 
 document.addEventListener("click", e => {
   const c = e.target.closest(".chip");
@@ -172,7 +186,7 @@ document.addEventListener("click", e => {
   if(t){ st.tab=t.dataset.tab; garder("tab",st.tab); tout(); return; }
   const r = e.target.closest("[data-ref]");
   if(r){ st.drv=r.dataset.ref; garder("drv",st.drv); $("#fiche").hidden=true; tout(); window.scrollTo({top:0,behavior:"smooth"}); return; }
-  const it = e.target.closest(".item,.membre");
+  const it = e.target.closest(".item,.membre,.tuile");
   if(it){ ouvrirFiche(it.dataset.t); return; }
   if(e.target.closest(".ferme") || e.target.id==="fiche") $("#fiche").hidden = true;
 });

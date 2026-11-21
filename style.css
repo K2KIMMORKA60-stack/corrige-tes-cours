@@ -92,3 +92,17 @@ input[type=search]{width:100%;border:1px solid var(--line);background:var(--surf
 footer{font-size:12px;color:var(--muted);text-align:center}
 @media (max-width:420px){.item{grid-template-columns:minmax(0,1fr) 70px 58px}.prix{font-size:26px}}
 @media (prefers-reduced-motion:no-preference){.chip,.tab,.item{transition:background .15s}}
+
+/* Couleurs des familles */
+.item{border-left:5px solid var(--c,transparent)}
+.item .sect{color:var(--c);font-weight:600;filter:saturate(1.1)}
+.membre{border-left:4px solid var(--c,var(--line))}
+.mosaique-bloc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+#mosaique{display:grid;grid-template-columns:repeat(auto-fill,minmax(18px,1fr));gap:4px}
+.tuile{aspect-ratio:1;max-width:100%;border:0;border-radius:4px;background:var(--c);cursor:pointer;position:relative;padding:0}
+.tuile.ref{outline:2px solid var(--ink);outline-offset:1px}
+.tuile span{position:absolute;inset:auto 3px 3px auto;width:5px;height:5px;border-radius:50%}
+.tuile .fl-up{background:#fff}
+.tuile .fl-down{background:rgba(0,0,0,.55)}
+#legende-couleurs{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--muted)}
+#legende-couleurs span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c);margin-right:5px;vertical-align:-1px}
