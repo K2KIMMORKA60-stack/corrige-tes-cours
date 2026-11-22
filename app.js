@@ -58,7 +58,7 @@ function leMoteur(t){ const m = MOTEURS.find(x=>x[0]===t); return m ? m[2] : (by
 function filtre(a){
   if(a.t===st.drv) return false;
   if(st.type!=="tout" && a.k!==st.type) return false;
-  if(st.reg!=="Monde" && a.r!==st.reg) return false;
+  if(st.reg!=="Monde" && a.r!==st.reg && a.r!=="Monde") return false;
   if(st.q){ const q=st.q.toLowerCase(); if(!(a.n.toLowerCase().includes(q)||a.t.toLowerCase().includes(q)||a.s.toLowerCase().includes(q))) return false; }
   return true;
 }
@@ -112,7 +112,8 @@ function item(x, rang){
 function force(r){ const v=Math.abs(r); return v>=0.5?"lien fort":v>=0.25?"lien moyen":"lien faible"; }
 function rendreGroupes(){
   const L = lignes(), le = leMoteur(st.drv);
-  if(!L.length){ $("#contenu").innerHTML = `<div class="groupe"><div class="vide">${typeof st.win==="number"||st.win==="w1" ? "Aucun marché avec ces filtres. Touchez « Tout » et « Toutes régions »." : "Les cours de cette période ne sont pas encore disponibles. Réessayez dans quelques minutes."}</div></div>`; return; }
+  if(!L.length){ const manque = retours(st.drv).length<10;
+    $("#contenu").innerHTML = `<div class="groupe"><div class="vide">${manque ? "Les cours de cette période se chargent. Réessayez dans quelques secondes." : "Aucun marché avec ces filtres. Touchez « Tout » et « Toutes régions »."}</div></div>`; return; }
   const G = [
     {col:"var(--up)", titre:`Classement : montent avec ${le}`, desc:`Du plus lié au moins lié. Quand ${le} monte, ils montent aussi.`, f:x=>x.r>=0.1, tri:(a,b)=>b.r-a.r, open:true},
     {col:"var(--down)", titre:`Classement : vont à l'inverse ${deLe(le)}`, desc:`Du plus lié au moins lié. Quand ${le} monte, ils baissent.`, f:x=>x.r<=-0.1, tri:(a,b)=>a.r-b.r, open:true},
@@ -129,7 +130,7 @@ function rendreGroupes(){
 
 /* ---------- Familles : marchés qui bougent ensemble ---------- */
 function rendreFamilles(){
-  const A = D.assets.filter(a => (st.type==="tout"||a.k===st.type) && (st.reg==="Monde"||a.r===st.reg));
+  const A = D.assets.filter(a => (st.type==="tout"||a.k===st.type) && (st.reg==="Monde"||a.r===st.reg||a.r==="Monde"));
   const X0 = A.map(a => retours(a.t)), L0 = Math.max(0,...X0.map(x=>x.length));
   const A2 = A.filter((a,i)=>X0[i].length===L0 && L0>=10), X = X0.filter(x=>x.length===L0 && L0>=10);
   A.length = 0; A.push(...A2); const n = A.length;
