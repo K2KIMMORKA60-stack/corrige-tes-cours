@@ -263,3 +263,94 @@ fetch("data/marche.json", {cache:"no-cache"}).then(r => { if(!r.ok) throw new Er
 
 if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
 })();
+
+/* ---------- Verrou : seulement sur téléphone, Face ID + code à 6 chiffres en secours ---------- */
+(function(){
+"use strict";
+const ua = navigator.userAgent || "";
+const TELEPHONE = /iPhone|iPod|Android.*Mobile|Android/i.test(ua) || (navigator.maxTouchPoints>1 && /Macintosh/.test(ua) && /Mobile/.test(ua));
+if(!TELEPHONE){ document.documentElement.classList.add("ouvert"); return; }
+const CLE="ctc-code", BIO="ctc-faceid", OUVERT="ctc-ouvert", ESSAIS="ctc-essais", BLOQUE="ctc-bloque";
+const DELAI = 5*60*1000; // reverrouille après 5 minutes hors de l'application
+const lire = (st,k) => { try{ return st.getItem(k); }catch(e){ return null; } };
+const ecrire = (st,k,v) => { try{ v==null ? st.removeItem(k) : st.setItem(k,v); }catch(e){} };
+const b64 = a => btoa(String.fromCharCode(...new Uint8Array(a)));
+const deB64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+const alea = n => crypto.getRandomValues(new Uint8Array(n));
+const bioPossible = !!(window.PublicKeyCredential && navigator.credentials);
+async function empreinte(code){
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("ctc|"+code));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+async function activerFaceID(){
+  const c = await navigator.credentials.create({publicKey:{
+    challenge: alea(32), rp:{name:"Corrige tes cours", id:location.hostname},
+    user:{id:alea(16), name:"moi", displayName:"Corrige tes cours"},
+    pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],
+    authenticatorSelection:{authenticatorAttachment:"platform", userVerification:"required", residentKey:"discouraged"},
+    timeout:60000, attestation:"none"}});
+  ecrire(localStorage, BIO, b64(c.rawId));
+}
+async function verifierFaceID(){
+  const id = lire(localStorage, BIO); if(!id) return false;
+  await navigator.credentials.get({publicKey:{challenge:alea(32), rpId:location.hostname,
+    allowCredentials:[{type:"public-key", id:deB64(id)}], userVerification:"required", timeout:60000}});
+  return true;
+}
+function ouvrir(){ ecrire(sessionStorage,OUVERT,"1"); document.documentElement.classList.add("ouvert"); const v=document.getElementById("verrou"); if(v) v.remove(); }
+function boite(html){
+  let v = document.getElementById("verrou");
+  if(!v){ v = document.createElement("div"); v.id = "verrou"; document.body.appendChild(v); }
+  v.innerHTML = `<div class="vr-boite"><img src="icons/icon-192.png" alt=""><h2>Corrige tes cours</h2>${html}<p class="vr-err" aria-live="polite"></p></div>`;
+  return v;
+}
+function proposerFaceID(){
+  if(!bioPossible){ ouvrir(); return; }
+  const v = boite(`<p class="vr-msg">Votre code est enregistré. Voulez-vous aussi ouvrir avec Face ID ?</p>
+    <button type="button" class="vr-bio">Activer Face ID</button><button type="button" class="vr-lien vr-passer">Plus tard</button>`);
+  v.querySelector(".vr-bio").onclick = async () => {
+    try{ await activerFaceID(); ouvrir(); }
+    catch(e){ v.querySelector(".vr-err").textContent = "Face ID n'a pas pu être activé. Votre code reste valable."; }
+  };
+  v.querySelector(".vr-passer").onclick = ouvrir;
+}
+function afficher(){
+  document.documentElement.classList.remove("ouvert");
+  const nouveau = !lire(localStorage,CLE);
+  const avecBio = !nouveau && bioPossible && !!lire(localStorage,BIO);
+  let premier = null;
+  const v = boite(`${avecBio ? '<button type="button" class="vr-bio">Ouvrir avec Face ID</button><p class="vr-msg">ou entrez votre code :</p>' :
+      `<p class="vr-msg">${nouveau ? "Choisissez un code à 6 chiffres." : "Entrez votre code."}</p>`}
+    <form autocomplete="off"><input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" aria-label="Code à 6 chiffres" required>
+    <button type="submit">Valider</button></form>`);
+  const champ = v.querySelector("input"), msg = v.querySelector(".vr-msg"), err = v.querySelector(".vr-err");
+  if(avecBio) v.querySelector(".vr-bio").onclick = async () => {
+    err.textContent = "";
+    try{ if(await verifierFaceID()){ ecrire(localStorage,ESSAIS,null); ouvrir(); } }
+    catch(e){ err.textContent = "Face ID n'a pas reconnu. Réessayez ou entrez votre code."; }
+  };
+  else setTimeout(()=>champ.focus(), 50);
+  v.querySelector("form").addEventListener("submit", async e => {
+    e.preventDefault(); err.textContent = "";
+    const code = champ.value.trim(); champ.value = "";
+    if(!/^\d{6}$/.test(code)){ err.textContent = "Il faut exactement 6 chiffres."; return; }
+    if(!lire(localStorage,CLE)){
+      if(premier===null){ premier = code; msg.textContent = "Retapez le même code pour confirmer."; return; }
+      if(code!==premier){ premier = null; msg.textContent = "Choisissez un code à 6 chiffres."; err.textContent = "Les deux codes sont différents. Recommencez."; return; }
+      ecrire(localStorage,CLE,await empreinte(code)); proposerFaceID(); return;
+    }
+    const attente = Number(lire(localStorage,BLOQUE)||0) - Date.now();
+    if(attente>0){ err.textContent = `Trop d'essais. Attendez ${Math.ceil(attente/1000)} secondes.`; return; }
+    if(await empreinte(code) === lire(localStorage,CLE)){ ecrire(localStorage,ESSAIS,null); ouvrir(); return; }
+    const n = Number(lire(localStorage,ESSAIS)||0)+1; ecrire(localStorage,ESSAIS,String(n));
+    if(n>=5){ ecrire(localStorage,ESSAIS,null); ecrire(localStorage,BLOQUE,String(Date.now()+30000)); err.textContent = "Trop d'essais. Attendez 30 secondes."; }
+    else err.textContent = `Code faux. Encore ${5-n} essai${5-n>1?"s":""}.`;
+  });
+}
+if(lire(sessionStorage,OUVERT)==="1" && lire(localStorage,CLE)) ouvrir(); else afficher();
+let cache = 0;
+document.addEventListener("visibilitychange", () => {
+  if(document.hidden) cache = Date.now();
+  else if(cache && Date.now()-cache > DELAI){ ecrire(sessionStorage,OUVERT,null); afficher(); }
+});
+})();

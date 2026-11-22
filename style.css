@@ -138,3 +138,17 @@ header.top h1{background:linear-gradient(90deg,var(--glow1),var(--glow2));-webki
 .cf-bonus{margin:0;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
 .cf-bonus b{color:var(--ink)}
 .cf-bonus b.up{color:var(--up)} .cf-bonus b.down{color:var(--down)}
+
+/* ---------- Verrou ---------- */
+html:not(.ouvert) .wrap, html:not(.ouvert) #fiche{visibility:hidden}
+#verrou{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+.vr-boite{width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.vr-boite img{width:72px;height:72px;border-radius:16px}
+.vr-boite h2{font:800 24px/1.1 var(--f-display);margin:0}
+.vr-msg{margin:0;color:var(--muted)}
+.vr-boite input{width:100%;font:600 28px/1 var(--f-num);letter-spacing:.5em;text-align:center;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.vr-boite button{width:100%;border:0;border-radius:12px;padding:14px;font:800 17px/1 var(--f-display);background:var(--accent);color:#fff;cursor:pointer}
+.vr-err{margin:0;min-height:1.4em;color:var(--down);font-size:14px}
+.vr-boite form{width:100%;display:flex;flex-direction:column;gap:14px}
+.vr-boite .vr-lien{background:transparent;color:var(--muted);font:500 15px/1 var(--f-body);padding:8px}
+.vr-boite .vr-bio{background:var(--up);color:#062}
