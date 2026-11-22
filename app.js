@@ -196,7 +196,10 @@ const CONFIRM = [
    bonus:"la Chine achète beaucoup de cuivre. Ses nouvelles comptent."},
   {id:"ble", titre:"le blé", trio:[["ZW=F","Blé"],["ZC=F","Maïs"],["ZS=F","Soja"]],
    sous:"Regardez le maïs et le soja avant d'entrer.",
-   bonus:"la météo des grandes régions agricoles fait souvent bouger les céréales."}
+   bonus:"la météo des grandes régions agricoles fait souvent bouger les céréales."},
+  {id:"bitcoin", titre:"le bitcoin", trio:[["BTC-USD","Bitcoin"],["ETH-USD","Ethereum"],["^IXIC","Nasdaq"]],
+   sous:"Regardez l'Ethereum et le Nasdaq avant d'entrer.",
+   bonus:"le week-end, la Bourse est fermée. Seules les cryptos bougent alors."}
 ];
 const SEUIL = 0.001; // en dessous de 0,1 % sur la journée, le marché est « stable »
 st.conf = lire("conf","or");
