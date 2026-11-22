@@ -152,3 +152,4 @@ html:not(.ouvert) .wrap, html:not(.ouvert) #fiche{visibility:hidden}
 .vr-boite form{width:100%;display:flex;flex-direction:column;gap:14px}
 .vr-boite .vr-lien{background:transparent;color:var(--muted);font:500 15px/1 var(--f-body);padding:8px}
 .vr-boite .vr-bio{background:var(--up);color:#062}
+.item .rang{color:var(--muted);font-family:var(--f-num);font-weight:500}

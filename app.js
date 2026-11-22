@@ -6,7 +6,10 @@ const MOTEURS = [
   ["NG=F","Gaz naturel","le gaz"],["HG=F","Cuivre","le cuivre"],["DX-Y.NYB","Dollar","le dollar"],
   ["^GSPC","S&P 500","le S&P 500"],["^IXIC","Nasdaq","le Nasdaq"],["BTC-USD","Bitcoin","le bitcoin"],["^TNX","Taux US","les taux US"]
 ];
-const PERIODES = [[21,"1 mois"],[63,"3 mois"],[126,"6 mois"],[250,"1 an"]];
+const PERIODES = [["m5","5 min"],["m10","10 min"],["m15","15 min"],["h1","1 heure"],["w1","1 semaine"],[21,"1 mois"],[63,"3 mois"],[126,"6 mois"],[250,"1 an"]];
+const NOMS_PERIODE = {m5:"bougies de 5 min",m10:"bougies de 10 min",m15:"bougies de 15 min",h1:"bougies d'1 heure",w1:"bougies d'1 semaine, sur 1 an"};
+const nomPeriode = () => NOMS_PERIODE[st.win] || (PERIODES.find(p=>p[0]===st.win)||[0,"1 mois"])[1];
+const INTRA = {}; // m5, m15, h1 : { t: rendements }
 const TYPES = [["tout","Tout"],["action","Actions"],["indice","Indices"],["secteur","Secteurs"],["matiere","Matières premières"],["devise","Devises"],["crypto","Crypto"]];
 const REGIONS = ["Monde","USA","Europe","Asie","Amériques","Moyen-Orient"];
 const COULEURS = {"Pétrole":"#D9822B","Services pétroliers":"#C4622A","Raffinage":"#A9502F","Énergie":"#E8A33A",
@@ -34,6 +37,19 @@ function stats(x, y){ // corrélation et sensibilité de y par rapport à x
 }
 const deLe = t => t.startsWith("le ") ? "du "+t.slice(3) : t.startsWith("les ") ? "des "+t.slice(4) : "de "+t;
 const aLe = t => t.startsWith("le ") ? "au "+t.slice(3) : t.startsWith("les ") ? "aux "+t.slice(4) : "à "+t;
+function retours(t){
+  if(typeof st.win==="number") return fin(R[t]||[], st.win);
+  if(st.win==="w1"){ const c = (byT[t]||{}).c||[]; const w=[]; for(let i=c.length-1;i>=0;i-=5) w.unshift(c[i]); return rendements(w.slice(-53)); }
+  const k = st.win==="m10" ? "m5" : st.win, d = INTRA[k]; if(!d || !d.c[t]) return [];
+  let c = d.c[t]; if(st.win==="m10"){ const x=[]; for(let i=c.length-1;i>=0;i-=2) x.unshift(c[i]); c=x; }
+  return rendements(c);
+}
+function chargerPeriode(){
+  if(typeof st.win==="number" || st.win==="w1") return Promise.resolve(true);
+  const k = st.win==="m10" ? "m5" : st.win; if(INTRA[k]) return Promise.resolve(true);
+  return fetch("data/"+k+".json",{cache:"no-cache"}).then(r=>{ if(!r.ok) throw 0; return r.json(); })
+    .then(j=>{ INTRA[k]=j; return true; }).catch(()=>false);
+}
 const fin = (a, w) => a.slice(Math.max(0, a.length-w));
 function variation(a, j){ const c=a.c, n=c.length; return n>j ? c[n-1]/c[n-1-j]-1 : 0; }
 function nomMoteur(t){ const m = MOTEURS.find(x=>x[0]===t); return m ? m[1] : (byT[t]?byT[t].n:t); }
@@ -77,42 +93,46 @@ function fmtPrix(v){ const d = v>=1000?0: v>=10?2: 4; return v.toLocaleString("f
 
 /* ---------- Calcul des liens ---------- */
 function lignes(){
-  const x = fin(R[st.drv]||[], st.win);
-  return D.assets.filter(filtre).map(a => { const s = stats(x, fin(R[a.t], st.win)); return { a, r:s.r, beta:s.beta, j1:variation(a,1) }; });
+  const x = retours(st.drv); if(x.length<10) return [];
+  return D.assets.filter(filtre).map(a => { const y = retours(a.t); if(y.length!==x.length) return null;
+    const s = stats(x, y); return { a, r:s.r, beta:s.beta, j1:variation(a,1) }; }).filter(Boolean);
 }
 
 function jauge(r){
   const w = Math.abs(r)*50, left = r>=0 ? 50 : 50-w, col = r>=0 ? "var(--up)" : "var(--down)";
   return `<div><div class="jauge"><i style="left:${left}%;width:${w}%;background:${col}"></i></div><div class="jauge-l num">${(r*100).toFixed(0)} %</div></div>`;
 }
-function item(x){
+function item(x, rang){
   const sensi = `+1 % → ${x.beta>=0?"+":""}${x.beta.toFixed(2).replace(".",",")} %`;
-  return `<button class="item" style="--c:${couleur(x.a.s)}" data-t="${esc(x.a.t)}"><div style="min-width:0"><div class="nom">${esc(x.a.n)}</div>
-    <div class="meta"><span class="sect">${esc(x.a.s)}</span> · ${esc(x.a.r)} · ${sensi}</div></div>${jauge(x.r)}
+  return `<button class="item" style="--c:${couleur(x.a.s)}" data-t="${esc(x.a.t)}"><div style="min-width:0"><div class="nom">${rang?`<span class="rang">${rang}.</span> `:""}${esc(x.a.n)}</div>
+    <div class="meta"><span class="sect">${esc(x.a.s)}</span> · ${force(x.r)} · ${sensi}</div></div>${jauge(x.r)}
     <div class="jour num ${cls(x.j1)}">${pct(x.j1)}</div></button>`;
 }
 
+function force(r){ const v=Math.abs(r); return v>=0.5?"lien fort":v>=0.25?"lien moyen":"lien faible"; }
 function rendreGroupes(){
   const L = lignes(), le = leMoteur(st.drv);
+  if(!L.length){ $("#contenu").innerHTML = `<div class="groupe"><div class="vide">${typeof st.win==="number"||st.win==="w1" ? "Aucun marché avec ces filtres. Touchez « Tout » et « Toutes régions »." : "Les cours de cette période ne sont pas encore disponibles. Réessayez dans quelques minutes."}</div></div>`; return; }
   const G = [
-    {id:"fort", col:"var(--up)", titre:`Montent fort avec ${le}`, desc:`Quand ${le} monte, ils montent aussi. Quand il baisse, ils baissent.`, f:x=>x.r>=0.5, tri:(a,b)=>b.r-a.r, open:true},
-    {id:"un-peu", col:"color-mix(in srgb, var(--up) 45%, var(--surface))", titre:`Suivent un peu ${le}`, desc:"Même sens, mais lien plus faible.", f:x=>x.r>=0.25&&x.r<0.5, tri:(a,b)=>b.r-a.r, open:true},
-    {id:"inverse", col:"var(--down)", titre:`Vont à l'inverse ${deLe(le)}`, desc:`Quand ${le} monte, ils baissent souvent. Quand il baisse, ils montent.`, f:x=>x.r<=-0.25, tri:(a,b)=>a.r-b.r, open:true},
-    {id:"libre", col:"var(--muted)", titre:"Pas vraiment liés", desc:"Ils bougent pour d'autres raisons.", f:x=>x.r>-0.25&&x.r<0.25, tri:(a,b)=>b.r-a.r, open:false},
+    {col:"var(--up)", titre:`Classement : montent avec ${le}`, desc:`Du plus lié au moins lié. Quand ${le} monte, ils montent aussi.`, f:x=>x.r>=0.1, tri:(a,b)=>b.r-a.r, open:true},
+    {col:"var(--down)", titre:`Classement : vont à l'inverse ${deLe(le)}`, desc:`Du plus lié au moins lié. Quand ${le} monte, ils baissent.`, f:x=>x.r<=-0.1, tri:(a,b)=>a.r-b.r, open:true},
+    {col:"var(--muted)", titre:"Pas liés", desc:"Ils bougent pour d'autres raisons.", f:x=>x.r>-0.1&&x.r<0.1, tri:(a,b)=>b.r-a.r, open:false},
   ];
   $("#contenu").innerHTML = G.map(g => {
     const m = L.filter(g.f).sort(g.tri);
     return `<details class="groupe" ${g.open?"open":""}><summary><span class="tag" style="background:${g.col}"></span>
       <div style="flex:1;min-width:0"><h3>${esc(g.titre)}</h3><div class="desc">${esc(g.desc)}</div></div>
       <span class="compte">${m.length}</span></summary>
-      <div class="liste">${m.length? m.map(item).join("") : '<div class="vide">Aucun marché dans ce groupe avec ces filtres.</div>'}</div></details>`;
-  }).join("") + `<p class="label" style="text-align:center">Jauge = force du lien sur ${PERIODES.find(p=>p[0]===st.win)[1]} · « +1 % → » = mouvement moyen quand la référence fait +1 %</p>`;
+      <div class="liste">${m.length? m.map((x,i)=>item(x,i+1)).join("") : '<div class="vide">Aucun marché dans ce classement avec ces filtres.</div>'}</div></details>`;
+  }).join("") + `<p class="label" style="text-align:center">Jauge = force du lien (${esc(nomPeriode())}) · « +1 % → » = mouvement moyen quand la référence fait +1 %</p>`;
 }
 
 /* ---------- Familles : marchés qui bougent ensemble ---------- */
 function rendreFamilles(){
   const A = D.assets.filter(a => (st.type==="tout"||a.k===st.type) && (st.reg==="Monde"||a.r===st.reg));
-  const X = A.map(a => fin(R[a.t], st.win)), n = A.length;
+  const X0 = A.map(a => retours(a.t)), L0 = Math.max(0,...X0.map(x=>x.length));
+  const A2 = A.filter((a,i)=>X0[i].length===L0 && L0>=10), X = X0.filter(x=>x.length===L0 && L0>=10);
+  A.length = 0; A.push(...A2); const n = A.length;
   const C = []; for(let i=0;i<n;i++){ C[i]=[]; for(let j=0;j<n;j++) C[i][j] = i===j?1 : j<i ? C[j][i] : stats(X[i],X[j]).r; }
   let cl = A.map((_,i)=>[i]);
   const lien = (p,q) => { let s=0; for(const i of p) for(const j of q) s+=C[i][j]; return s/(p.length*q.length); };
@@ -122,7 +142,7 @@ function rendreFamilles(){
   const fam = cl.filter(c=>c.length>1).sort((a,b)=>b.length-a.length), seuls = cl.filter(c=>c.length===1).map(c=>c[0]);
   const nomFam = c => { const k={}; c.forEach(i=>{k[A[i].s]=(k[A[i].s]||0)+1;}); return Object.entries(k).sort((a,b)=>b[1]-a[1]).slice(0,2).map(e=>e[0]).join(" + "); };
   const chip = i => { const j=variation(A[i],1); return `<button class="membre" style="--c:${couleur(A[i].s)}" data-t="${esc(A[i].t)}">${esc(A[i].n)}<span class="num ${cls(j)}">${pct(j)}</span></button>`; };
-  $("#contenu").innerHTML = `<p class="label" style="margin:0">Marchés qui montent et descendent ensemble (${PERIODES.find(p=>p[0]===st.win)[1]})</p>` +
+  $("#contenu").innerHTML = `<p class="label" style="margin:0">Marchés qui montent et descendent ensemble (${esc(nomPeriode())})</p>` +
     fam.map(c => { const moy = c.reduce((s,i)=>s+variation(A[i],1),0)/c.length, force = lien(c,c);
       const sx = (moy*100).toFixed(1).replace(".",",");
       return `<section class="groupe famille"><div style="padding:14px 16px;display:flex;justify-content:space-between;gap:10px;align-items:center">
@@ -134,7 +154,8 @@ function rendreFamilles(){
 /* ---------- Fiche détaillée ---------- */
 function ouvrirFiche(t){
   const a = byT[t], m = byT[st.drv]; if(!a||!m) return;
-  const w = Math.min(st.win, a.c.length-1), s = stats(fin(R[st.drv],w), fin(R[t],w));
+  const w = Math.min(typeof st.win==="number"?st.win:63, a.c.length-1);
+  const rx = retours(st.drv), ry = retours(t), s = rx.length===ry.length && rx.length>=10 ? stats(rx, ry) : stats(fin(R[st.drv],w), fin(R[t],w));
   const ca = a.c.slice(-w-1), cm = m.c.slice(-w-1);
   const na = ca.map(v=>v/ca[0]*100), nm = cm.map(v=>v/cm[0]*100);
   const all = na.concat(nm), lo=Math.min(...all), hi=Math.max(...all), W=600, H=240, P=34;
@@ -146,7 +167,7 @@ function ouvrirFiche(t){
   const txt = s.r>=0.5 ? "suit fort "+lm : s.r>=0.25 ? "suit un peu "+lm : s.r<=-0.25 ? "va à l'inverse "+deLe(lm) : "n'est pas vraiment lié "+aLe(lm);
   $("#fiche").innerHTML = `<div role="dialog" aria-modal="true" aria-label="${esc(a.n)}"><button class="ferme" aria-label="Fermer">✕</button>
     <div><div class="label">${esc(a.s)} · ${esc(a.r)} · ${esc(a.t)}</div><h3>${esc(a.n)}</h3></div>
-    <p style="margin:0">${esc(a.n)} <b>${esc(txt)}</b> sur ${PERIODES.find(p=>p[0]===st.win)[1]}.
+    <p style="margin:0">${esc(a.n)} <b>${esc(txt)}</b> (${esc(nomPeriode())}).
       Lien ${(s.r*100).toFixed(0)} %. Quand la référence fait +1 %, ${esc(a.n)} fait en moyenne ${s.beta>=0?"+":""}${s.beta.toFixed(2).replace(".",",")} %.</p>
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbes comparées">${ticks}
       <path d="${path(nm)}" fill="none" stroke="var(--drv)" stroke-width="2" stroke-dasharray="5 4"/>
@@ -244,7 +265,8 @@ document.addEventListener("click", e => {
   const cf = e.target.closest("[data-conf]");
   if(cf){ st.conf=cf.dataset.conf; garder("conf",st.conf); rendreConfirmation(); return; }
   const c = e.target.closest(".chip");
-  if(c){ const k=c.dataset.k; st[k] = k==="win" ? +c.dataset.v : c.dataset.v; garder(k, st[k]); tout(); return; }
+  if(c){ const k=c.dataset.k, v=c.dataset.v; st[k] = k==="win" ? (isNaN(+v)?v:+v) : v; garder(k, st[k]);
+    if(k==="win"){ tout(); chargerPeriode().then(()=>tout()); } else tout(); return; }
   const t = e.target.closest(".tab");
   if(t){ st.tab=t.dataset.tab; garder("tab",st.tab); tout(); return; }
   const r = e.target.closest("[data-ref]");
@@ -261,7 +283,8 @@ fetch("data/marche.json", {cache:"no-cache"}).then(r => { if(!r.ok) throw new Er
   if(!byT[st.drv]) st.drv = "CL=F";
   $("#demo").hidden = !D.demo;
   const dt = new Date(D.maj); $("#maj").textContent = "Mis à jour le " + (isNaN(dt)? D.maj : dt.toLocaleString("fr-FR",{dateStyle:"medium",timeStyle:"short"})) + " · " + D.source;
-  tout();
+  if(!PERIODES.find(p=>p[0]===st.win)) st.win = 21;
+  tout(); chargerPeriode().then(()=>tout());
 }).catch(() => { $("#moteur").innerHTML = '<p class="vide">Impossible de charger les cours. Vérifiez la connexion puis rouvrez l\'application.</p>'; });
 
 if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});

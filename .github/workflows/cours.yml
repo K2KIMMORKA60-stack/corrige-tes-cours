@@ -4,8 +4,8 @@ on:
   push: { branches: [main] }
   workflow_dispatch:
   schedule:
-    - cron: "15 */2 * * 1-5"   # toutes les 2 heures, du lundi au vendredi
-    - cron: "0 12 * * 0,6"     # une fois le week-end (crypto)
+    - cron: "*/15 * * * 1-5"   # toutes les 15 minutes, du lundi au vendredi
+    - cron: "0 */2 * * 0,6"    # toutes les 2 heures le week-end (crypto)
 permissions: { contents: read, pages: write, id-token: write }
 concurrency: { group: pages, cancel-in-progress: true }
 jobs:

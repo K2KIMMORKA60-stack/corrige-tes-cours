@@ -57,3 +57,46 @@ with open("data/marche.json", "w") as f:
     json.dump(out, f, separators=(",", ":"))
 print("écrit", len(assets), "marchés,", len(dates), "jours")
 if len(assets) < 20: sys.exit("trop peu de données")
+
+# ---------- Cours courts : bougies de 5 min, 15 min et 1 heure ----------
+def get_intra(sym, interval, rng):
+    url = ("https://query1.finance.yahoo.com/v8/finance/chart/" + urllib.parse.quote(sym)
+           + "?range=" + rng + "&interval=" + interval + "&includePrePost=false")
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    for essai in range(2):
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                j = json.load(r)
+            res = j["chart"]["result"][0]
+            return {t: float(c) for t, c in zip(res.get("timestamp") or [], res["indicators"]["quote"][0]["close"])
+                    if c is not None}
+        except Exception as e:
+            print("  essai", essai + 1, sym, interval, e); time.sleep(2)
+    return None
+
+PAS = {"m5": ("5m", "5d", 300, 576), "m15": ("15m", "5d", 900, 480), "h1": ("60m", "1mo", 3600, 240)}
+gardes = [a["t"] for a in assets]
+for cle, (interval, rng, pas, garder) in PAS.items():
+    brut = {}
+    for sym in gardes:
+        d = get_intra(sym, interval, rng)
+        if d and len(d) > 20:
+            brut[sym] = {int(t // pas * pas): c for t, c in sorted(d.items())}
+        time.sleep(0.25)
+    if len(brut) < 20:
+        print("cours", cle, ": trop peu de données, fichier non écrit"); continue
+    grille = sorted({t for d in brut.values() for t in d})[-garder:]
+    sortie = {}
+    for sym, d in brut.items():
+        avant = [t for t in d if t < grille[0]]
+        der = d[max(avant)] if avant else None
+        serie = []
+        for t in grille:
+            if t in d: der = d[t]
+            serie.append(der)
+        prem = next((v for v in serie if v is not None), None)
+        sortie[sym] = [float(f"{(prem if v is None else v):.6g}") for v in serie]
+    with open("data/" + cle + ".json", "w") as f:
+        json.dump({"maj": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), "debut": grille[0],
+                   "fin": grille[-1], "c": sortie}, f, separators=(",", ":"))
+    print("écrit", cle, len(sortie), "marchés,", len(grille), "bougies")
