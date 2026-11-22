@@ -74,7 +74,7 @@ def get_intra(sym, interval, rng):
             print("  essai", essai + 1, sym, interval, e); time.sleep(2)
     return None
 
-PAS = {"m5": ("5m", "5d", 300, 576), "m15": ("15m", "5d", 900, 480), "h1": ("60m", "1mo", 3600, 240)}
+PAS = {"m5": ("5m", "5d", 300, 576), "m15": ("15m", "5d", 900, 480), "h1": ("60m", "1mo", 3600, 480)}
 gardes = [a["t"] for a in assets]
 for cle, (interval, rng, pas, garder) in PAS.items():
     brut = {}

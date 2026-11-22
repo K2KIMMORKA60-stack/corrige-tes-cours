@@ -1,5 +1,5 @@
 // Garde l'application disponible hors ligne ; les cours sont toujours repris en ligne d'abord.
-const V = "ctc-v10";
+const V = "ctc-v11";
 const FICHIERS = ["./", "index.html", "style.css", "app.js", "manifest.webmanifest", "icons/icon-192.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(FICHIERS))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== V).map(x => caches.delete(x))))); self.clients.claim(); });

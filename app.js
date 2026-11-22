@@ -6,9 +6,10 @@ const MOTEURS = [
   ["NG=F","Gaz naturel","le gaz"],["HG=F","Cuivre","le cuivre"],["DX-Y.NYB","Dollar","le dollar"],
   ["^GSPC","S&P 500","le S&P 500"],["^IXIC","Nasdaq","le Nasdaq"],["BTC-USD","Bitcoin","le bitcoin"],["^TNX","Taux US","les taux US"]
 ];
-const PERIODES = [["m5","5 min"],["m10","10 min"],["m15","15 min"],["h1","1 heure"],["w1","1 semaine"],[21,"1 mois"],[63,"3 mois"],[126,"6 mois"],[250,"1 an"]];
-const NOMS_PERIODE = {m5:"bougies de 5 min",m10:"bougies de 10 min",m15:"bougies de 15 min",h1:"bougies d'1 heure",w1:"bougies d'1 semaine, sur 1 an"};
+const PERIODES = [["m5","5 min"],["m10","10 min"],["m15","15 min"],["h1","1 heure"],["h4","4 heures"],["w1","1 semaine"],[21,"1 mois"],[63,"3 mois"],[126,"6 mois"],[250,"1 an"]];
+const NOMS_PERIODE = {m5:"bougies de 5 min",m10:"bougies de 10 min",m15:"bougies de 15 min",h1:"bougies d'1 heure",h4:"bougies de 4 heures",w1:"bougies d'1 semaine, sur 1 an"};
 const nomPeriode = () => NOMS_PERIODE[st.win] || (PERIODES.find(p=>p[0]===st.win)||[0,"1 mois"])[1];
+const SOURCE = {m10:"m5", h4:"h1"}, PAS_P = {m10:2, h4:4};
 const INTRA = {}; // m5, m15, h1 : { t: rendements }
 const TYPES = [["tout","Tout"],["action","Actions"],["indice","Indices"],["secteur","Secteurs"],["matiere","Matières premières"],["devise","Devises"],["crypto","Crypto"]];
 const REGIONS = ["Monde","USA","Europe","Asie","Amériques","Moyen-Orient"];
@@ -40,13 +41,14 @@ const aLe = t => t.startsWith("le ") ? "au "+t.slice(3) : t.startsWith("les ") ?
 function retours(t){
   if(typeof st.win==="number") return fin(R[t]||[], st.win);
   if(st.win==="w1"){ const c = (byT[t]||{}).c||[]; const w=[]; for(let i=c.length-1;i>=0;i-=5) w.unshift(c[i]); return rendements(w.slice(-53)); }
-  const k = st.win==="m10" ? "m5" : st.win, d = INTRA[k]; if(!d || !d.c[t]) return [];
-  let c = d.c[t]; if(st.win==="m10"){ const x=[]; for(let i=c.length-1;i>=0;i-=2) x.unshift(c[i]); c=x; }
+  const k = SOURCE[st.win]||st.win, d = INTRA[k]; if(!d || !d.c[t]) return [];
+  let c = d.c[t]; const pas = PAS_P[st.win]||1;
+  if(pas>1){ const x=[]; for(let i=c.length-1;i>=0;i-=pas) x.unshift(c[i]); c=x; }
   return rendements(c);
 }
 function chargerPeriode(){
   if(typeof st.win==="number" || st.win==="w1") return Promise.resolve(true);
-  const k = st.win==="m10" ? "m5" : st.win; if(INTRA[k]) return Promise.resolve(true);
+  const k = SOURCE[st.win]||st.win; if(INTRA[k]) return Promise.resolve(true);
   return fetch("data/"+k+".json",{cache:"no-cache"}).then(r=>{ if(!r.ok) throw 0; return r.json(); })
     .then(j=>{ INTRA[k]=j; return true; }).catch(()=>false);
 }
