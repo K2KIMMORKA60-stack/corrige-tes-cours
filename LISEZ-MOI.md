@@ -3,9 +3,10 @@
 Application installable (téléphone et PC) qui montre :
 - si le pétrole (ou l'or, le dollar, le Nasdaq…) monte ou baisse aujourd'hui ;
 - quelles actions, indices, secteurs, devises et cryptos montent avec lui, et lesquels vont à l'inverse ;
-- les « familles » de marchés qui bougent ensemble.
+- les « familles » de marchés qui bougent ensemble ;
+- la règle de confirmation : acheter ou vendre seulement quand trois marchés liés vont dans le même sens (or, argent, platine, pétrole, cuivre, blé).
 
-114 marchés du monde entier. Données gratuites : Yahoo Finance (clôtures journalières), sans clé.
+120 marchés du monde entier. Données gratuites : Yahoo Finance (clôtures journalières), sans clé.
 
 ## Fichiers
 - `index.html`, `style.css`, `app.js`, `sw.js`, `manifest.webmanifest`, `icons/` : l'application.

@@ -177,9 +177,66 @@ function rendreMosaique(){
   const fam = [...new Set(A.map(a=>a.s))];
   $("#legende-couleurs").innerHTML = fam.map(f=>`<span style="--c:${couleur(f)}">${esc(f)}</span>`).join("");
 }
-function tout(){ rendreCtrl(); rendreMosaique(); rendreMoteur(); (st.tab==="groupes"?rendreGroupes:rendreFamilles)(); }
+/* ---------- Confirmation : trois marchés liés dans le même sens ---------- */
+const CONFIRM = [
+  {id:"or", titre:"l'or", trio:[["GC=F","Or"],["SI=F","Argent"],["GDX","Mines d'or"]],
+   sous:"Regardez l'argent et les mines d'or avant d'entrer.", dollar:true,
+   bonus:"si le Dollar monte fort, l'or a souvent du mal à monter."},
+  {id:"argent", titre:"l'argent", trio:[["SI=F","Argent"],["GC=F","Or"],["SIL","Mines d'argent"]],
+   sous:"Regardez l'or et les mines d'argent avant d'entrer.", dollar:true,
+   bonus:"si le Dollar monte fort, l'argent a souvent du mal à monter."},
+  {id:"platine", titre:"le platine", trio:[["PL=F","Platine"],["PA=F","Palladium"],["GC=F","Or"]],
+   sous:"Regardez le palladium et l'or avant d'entrer.", dollar:true,
+   bonus:"le platine suit aussi la santé de l'industrie automobile."},
+  {id:"petrole", titre:"le pétrole", trio:[["CL=F","Pétrole WTI"],["BZ=F","Pétrole Brent"],["XLE","Pétrolières"]],
+   sous:"Regardez le Brent et les sociétés pétrolières avant d'entrer.",
+   bonus:"le mercredi, le rapport américain sur les stocks fait souvent bouger le pétrole."},
+  {id:"cuivre", titre:"le cuivre", trio:[["HG=F","Cuivre"],["COPX","Mines de cuivre"],["AUDUSD=X","Dollar australien"]],
+   sous:"Regardez les mines de cuivre et le dollar australien avant d'entrer.",
+   bonus:"la Chine achète beaucoup de cuivre. Ses nouvelles comptent."},
+  {id:"ble", titre:"le blé", trio:[["ZW=F","Blé"],["ZC=F","Maïs"],["ZS=F","Soja"]],
+   sous:"Regardez le maïs et le soja avant d'entrer.",
+   bonus:"la météo des grandes régions agricoles fait souvent bouger les céréales."}
+];
+const SEUIL = 0.001; // en dessous de 0,1 % sur la journée, le marché est « stable »
+st.conf = lire("conf","or");
+function sensDe(j){ return j>SEUIL ? 1 : j<-SEUIL ? -1 : 0; }
+function rendreConfirmation(){
+  const z = $("#confirmation"); if(!z) return;
+  const dispo = CONFIRM.filter(m => m.trio.every(([t]) => byT[t]));
+  if(!dispo.length){ z.hidden = true; return; }
+  z.hidden = false;
+  const m = dispo.find(x=>x.id===st.conf) || dispo[0];
+  const cases = m.trio.map(([t,nom]) => { const j = variation(byT[t],1); return {nom, j, s:sensDe(j)}; });
+  let v;
+  if(cases.every(c=>c.s===1)) v = ["achat","ACHAT confirmé","Les trois montent ensemble."];
+  else if(cases.every(c=>c.s===-1)) v = ["vente","VENTE confirmée","Les trois baissent ensemble."];
+  else v = ["attente","ATTENDEZ","Ils ne vont pas dans le même sens. Ne forcez pas."];
+  let dollar = "";
+  if(m.dollar && byT["DX-Y.NYB"]){ const jd = variation(byT["DX-Y.NYB"],1);
+    dollar = ` Aujourd'hui, le Dollar : <b class="${cls(jd)}">${pct(jd,2)}</b>.`; }
+  const der = D.dates[D.dates.length-1];
+  const jour = new Date(der+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  z.innerHTML = `
+    <h2>Acheter ou vendre <span>${esc(m.titre)}</span> ?</h2>
+    <p class="cf-sous">${esc(m.sous)}</p>
+    <div class="chips">${dispo.map(x=>`<button class="chip" data-conf="${x.id}" aria-pressed="${x.id===m.id}">${esc(x.trio[0][1])}</button>`).join("")}</div>
+    <div class="cf-trio">${cases.map(c=>`<div class="cf-case ${c.s>0?"up":c.s<0?"down":"flat"}">
+      <span class="cf-fleche">${c.s>0?"▲":c.s<0?"▼":"●"}</span><b>${esc(c.nom)}</b><span class="num">${pct(c.j,2)}</span></div>`).join("")}</div>
+    <div class="cf-verdict ${v[0]}"><b>${v[1]}</b><span>${v[2]}</span></div>
+    <details class="cf-regle"><summary>La règle</summary>
+      <p><b class="up">ACHAT confirmé :</b> les trois montent ensemble.</p>
+      <p><b class="down">VENTE confirmée :</b> les trois baissent ensemble.</p>
+      <p><b class="cf-violet">ATTENDEZ :</b> ils ne vont pas dans le même sens.</p>
+      <p>Sous 0,1 % sur la journée, un marché compte comme stable (●).</p></details>
+    <p class="cf-bonus"><b>Bonus :</b> ${esc(m.bonus)}${dollar}</p>
+    <p class="cf-fin">Journée du ${esc(jour)}. C'est le contexte du jour. Votre entrée SMC en 5 min reste votre décision.</p>`;
+}
+function tout(){ rendreCtrl(); rendreMosaique(); rendreMoteur(); rendreConfirmation(); (st.tab==="groupes"?rendreGroupes:rendreFamilles)(); }
 
 document.addEventListener("click", e => {
+  const cf = e.target.closest("[data-conf]");
+  if(cf){ st.conf=cf.dataset.conf; garder("conf",st.conf); rendreConfirmation(); return; }
   const c = e.target.closest(".chip");
   if(c){ const k=c.dataset.k; st[k] = k==="win" ? +c.dataset.v : c.dataset.v; garder(k, st[k]); tout(); return; }
   const t = e.target.closest(".tab");

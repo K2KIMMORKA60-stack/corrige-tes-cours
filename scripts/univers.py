@@ -10,6 +10,10 @@ U = [
  ("SI=F","Argent","matiere","Monde","Métaux précieux"),
  ("HG=F","Cuivre","matiere","Monde","Métaux"),
  ("ZW=F","Blé","matiere","Monde","Agriculture"),
+ ("ZC=F","Maïs","matiere","Monde","Agriculture"),
+ ("ZS=F","Soja","matiere","Monde","Agriculture"),
+ ("PL=F","Platine","matiere","Monde","Métaux précieux"),
+ ("PA=F","Palladium","matiere","Monde","Métaux précieux"),
  # --- Indices ---
  ("^GSPC","S&P 500","indice","USA","Indice"),
  ("^IXIC","Nasdaq","indice","USA","Indice"),
@@ -38,6 +42,8 @@ U = [
  ("XLP","Secteur Conso. de base","secteur","USA","Conso de base"),
  ("JETS","Secteur Aérien","secteur","USA","Aérien"),
  ("GDX","Mines d'or","secteur","USA","Mines d'or"),
+ ("SIL","Mines d'argent","secteur","Monde","Mines d'or"),
+ ("COPX","Mines de cuivre","secteur","Monde","Mines"),
  # --- Pétrolières ---
  ("XOM","ExxonMobil","action","USA","Pétrole"),
  ("CVX","Chevron","action","USA","Pétrole"),

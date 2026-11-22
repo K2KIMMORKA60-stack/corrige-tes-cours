@@ -8,7 +8,7 @@ while len(dates) < N:
     if d.weekday() < 5: dates.append(d.isoformat())
     d -= datetime.timedelta(days=1)
 dates.reverse()
-F = ["o", "m", "g", "d", "c", "r", "cu"]
+F = ["o", "m", "g", "d", "c", "r", "cu", "a"]
 fac = {f: [random.gauss(0, 1) for _ in range(N)] for f in F}
 # derniers jours : pétrole en hausse pour l'exemple
 for i in range(N - 5, N): fac["o"][i] = abs(fac["o"][i]) + 0.6
@@ -22,14 +22,14 @@ L = {  # secteur -> chargements
  "Mines d'or": {"g": .8, "m": .25}, "Mines": {"cu": .6, "m": .4, "o": .2}, "Luxe": {"m": .65}, "Devises": {"d": -.8},
  "Devises pétrole": {"d": .5, "o": -.45}, "Crypto": {"c": .85, "m": .3},
 }
-special = {"CL=F": {"o": 1}, "BZ=F": {"o": .97}, "GC=F": {"g": 1}, "HG=F": {"cu": 1}, "USDJPY=X": {"d": .6, "r": .3},
+special = {"CL=F": {"o": 1}, "BZ=F": {"o": .97}, "GC=F": {"g": 1}, "HG=F": {"cu": 1}, "COPX": {"cu": .75, "m": .3}, "ZC=F": {"o": .15, "a": .7}, "ZS=F": {"o": .15, "a": .6}, "ZW=F": {"o": .15, "a": .7}, "USDJPY=X": {"d": .6, "r": .3},
            "AUDUSD=X": {"d": -.5, "m": .3, "cu": .2}, "USDCHF=X": {"d": .8}, "XLE": {"o": .8, "m": .3}, "2222.SR": {"o": .3, "m": .2}}
 vol = {"matiere": .018, "indice": .011, "secteur": .013, "action": .019, "devise": .006, "crypto": .035}
 base = {"CL=F": 66, "BZ=F": 70, "NG=F": 3.4, "GC=F": 3300, "SI=F": 38, "HG=F": 4.8, "ZW=F": 5.4, "^GSPC": 6500, "^IXIC": 21500,
         "^DJI": 45000, "^FCHI": 7900, "^GDAXI": 23500, "^FTSE": 9200, "^STOXX50E": 5400, "^N225": 42000, "^HSI": 25000,
         "000001.SS": 3700, "^BSESN": 82000, "^BVSP": 140000, "^GSPTSE": 28000, "^TNX": 4.2, "DX-Y.NYB": 99,
         "EURUSD=X": 1.15, "USDJPY=X": 150, "GBPUSD=X": 1.33, "USDCAD=X": 1.39, "USDNOK=X": 10.2, "AUDUSD=X": .65,
-        "USDCHF=X": .81, "BTC-USD": 95000, "ETH-USD": 3500}
+        "USDCHF=X": .81, "SIL": 45, "COPX": 48, "PL=F": 1550, "PA=F": 1300, "ZC=F": 4.3, "ZS=F": 10.6, "BTC-USD": 95000, "ETH-USD": 3500}
 assets = []
 for t, n, k, r, s in U:
     ld = special.get(t, L.get(s, {"m": .5}))

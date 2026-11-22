@@ -114,3 +114,27 @@ header.top h1{background:linear-gradient(90deg,var(--glow1),var(--glow2));-webki
 .conseil{border:1px solid var(--line)}
 .groupe{background:rgba(12,20,48,.88)}
 .demo{background:var(--drv)}
+
+/* ---------- Confirmation ---------- */
+.confirmation{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.confirmation h2{font:800 24px/1.15 var(--f-display);margin:0;text-wrap:balance}
+.confirmation h2 span{color:var(--accent)}
+.cf-sous,.cf-fin{margin:0;color:var(--muted);font-size:14px}
+.cf-trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.cf-case{background:var(--bg);border-radius:12px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.cf-case b{font-size:14px;line-height:1.2}
+.cf-case .num{font-size:12px;color:var(--muted)}
+.cf-fleche{font-size:26px;line-height:1;color:var(--muted)}
+.cf-case.up .cf-fleche{color:var(--up)} .cf-case.down .cf-fleche{color:var(--down)}
+.cf-verdict{border:2px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px;text-align:center}
+.cf-verdict b{font:800 20px/1.1 var(--f-display)}
+.cf-verdict span{font-size:14px;color:var(--muted)}
+.cf-verdict.achat{border-color:var(--up)} .cf-verdict.achat b{color:var(--up)}
+.cf-verdict.vente{border-color:var(--down)} .cf-verdict.vente b{color:var(--down)}
+.cf-verdict.attente{border-color:var(--drv)} .cf-verdict.attente b{color:var(--drv)}
+.cf-violet{color:var(--drv)}
+.cf-regle summary{cursor:pointer;font-weight:600}
+.cf-regle p{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.cf-bonus{margin:0;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+.cf-bonus b{color:var(--ink)}
+.cf-bonus b.up{color:var(--up)} .cf-bonus b.down{color:var(--down)}
