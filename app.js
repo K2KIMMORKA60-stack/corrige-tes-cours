@@ -32,6 +32,8 @@ function stats(x, y){ // corrélation et sensibilité de y par rapport à x
   let sxx=0,syy=0,sxy=0; for(let i=0;i<n;i++){const a=x[i]-mx,b=y[i]-my; sxx+=a*a; syy+=b*b; sxy+=a*b;}
   return { r: sxx&&syy ? sxy/Math.sqrt(sxx*syy) : 0, beta: sxx ? sxy/sxx : 0 };
 }
+const deLe = t => t.startsWith("le ") ? "du "+t.slice(3) : t.startsWith("les ") ? "des "+t.slice(4) : "de "+t;
+const aLe = t => t.startsWith("le ") ? "au "+t.slice(3) : t.startsWith("les ") ? "aux "+t.slice(4) : "à "+t;
 const fin = (a, w) => a.slice(Math.max(0, a.length-w));
 function variation(a, j){ const c=a.c, n=c.length; return n>j ? c[n-1]/c[n-1-j]-1 : 0; }
 function nomMoteur(t){ const m = MOTEURS.find(x=>x[0]===t); return m ? m[1] : (byT[t]?byT[t].n:t); }
@@ -95,7 +97,7 @@ function rendreGroupes(){
   const G = [
     {id:"fort", col:"var(--up)", titre:`Montent fort avec ${le}`, desc:`Quand ${le} monte, ils montent aussi. Quand il baisse, ils baissent.`, f:x=>x.r>=0.5, tri:(a,b)=>b.r-a.r, open:true},
     {id:"un-peu", col:"color-mix(in srgb, var(--up) 45%, var(--surface))", titre:`Suivent un peu ${le}`, desc:"Même sens, mais lien plus faible.", f:x=>x.r>=0.25&&x.r<0.5, tri:(a,b)=>b.r-a.r, open:true},
-    {id:"inverse", col:"var(--down)", titre:`Vont à l'inverse de ${le}`, desc:`Quand ${le} monte, ils baissent souvent. Quand il baisse, ils montent.`, f:x=>x.r<=-0.25, tri:(a,b)=>a.r-b.r, open:true},
+    {id:"inverse", col:"var(--down)", titre:`Vont à l'inverse ${deLe(le)}`, desc:`Quand ${le} monte, ils baissent souvent. Quand il baisse, ils montent.`, f:x=>x.r<=-0.25, tri:(a,b)=>a.r-b.r, open:true},
     {id:"libre", col:"var(--muted)", titre:"Pas vraiment liés", desc:"Ils bougent pour d'autres raisons.", f:x=>x.r>-0.25&&x.r<0.25, tri:(a,b)=>b.r-a.r, open:false},
   ];
   $("#contenu").innerHTML = G.map(g => {
@@ -140,10 +142,11 @@ function ouvrirFiche(t){
   const path = arr => arr.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)).join("");
   const ticks = [lo,(lo+hi)/2,hi].map(v=>`<text x="${P-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v.toFixed(0)}</text><line x1="${P}" x2="${W-8}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/>`).join("");
   const d0 = D.dates[D.dates.length-1-w]||"", d1 = D.dates[D.dates.length-1]||"";
-  const txt = s.r>=0.5 ? "suit fort" : s.r>=0.25 ? "suit un peu" : s.r<=-0.25 ? "va à l'inverse de" : "n'est pas vraiment lié à";
+  const lm = leMoteur(st.drv);
+  const txt = s.r>=0.5 ? "suit fort "+lm : s.r>=0.25 ? "suit un peu "+lm : s.r<=-0.25 ? "va à l'inverse "+deLe(lm) : "n'est pas vraiment lié "+aLe(lm);
   $("#fiche").innerHTML = `<div role="dialog" aria-modal="true" aria-label="${esc(a.n)}"><button class="ferme" aria-label="Fermer">✕</button>
     <div><div class="label">${esc(a.s)} · ${esc(a.r)} · ${esc(a.t)}</div><h3>${esc(a.n)}</h3></div>
-    <p style="margin:0">${esc(a.n)} <b>${txt}</b> ${esc(leMoteur(st.drv))} sur ${PERIODES.find(p=>p[0]===st.win)[1]}.
+    <p style="margin:0">${esc(a.n)} <b>${esc(txt)}</b> sur ${PERIODES.find(p=>p[0]===st.win)[1]}.
       Lien ${(s.r*100).toFixed(0)} %. Quand la référence fait +1 %, ${esc(a.n)} fait en moyenne ${s.beta>=0?"+":""}${s.beta.toFixed(2).replace(".",",")} %.</p>
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbes comparées">${ticks}
       <path d="${path(nm)}" fill="none" stroke="var(--drv)" stroke-width="2" stroke-dasharray="5 4"/>

@@ -134,4 +134,14 @@ U = [
  # --- Crypto ---
  ("BTC-USD","Bitcoin","crypto","Monde","Crypto"),
  ("ETH-USD","Ethereum","crypto","Monde","Crypto"),
+ ("SOL-USD","Solana","crypto","Monde","Crypto"),
+ ("XRP-USD","XRP","crypto","Monde","Crypto"),
+ ("BNB-USD","BNB","crypto","Monde","Crypto"),
+ ("ADA-USD","Cardano","crypto","Monde","Crypto"),
+ ("DOGE-USD","Dogecoin","crypto","Monde","Crypto"),
+ ("AVAX-USD","Avalanche","crypto","Monde","Crypto"),
+ ("LINK-USD","Chainlink","crypto","Monde","Crypto"),
+ ("LTC-USD","Litecoin","crypto","Monde","Crypto"),
+ ("COIN","Coinbase","action","USA","Crypto"),
+ ("MSTR","Strategy (MicroStrategy)","action","USA","Crypto"),
 ]

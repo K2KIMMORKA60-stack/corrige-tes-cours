@@ -6,7 +6,7 @@ Application installable (téléphone et PC) qui montre :
 - les « familles » de marchés qui bougent ensemble ;
 - la règle de confirmation : acheter ou vendre seulement quand trois marchés liés vont dans le même sens (or, argent, platine, pétrole, cuivre, blé).
 
-120 marchés du monde entier. Données gratuites : Yahoo Finance (clôtures journalières), sans clé.
+130 marchés du monde entier. Données gratuites : Yahoo Finance (clôtures journalières), sans clé.
 
 ## Fichiers
 - `index.html`, `style.css`, `app.js`, `sw.js`, `manifest.webmanifest`, `icons/` : l'application.

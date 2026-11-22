@@ -29,7 +29,7 @@ base = {"CL=F": 66, "BZ=F": 70, "NG=F": 3.4, "GC=F": 3300, "SI=F": 38, "HG=F": 4
         "^DJI": 45000, "^FCHI": 7900, "^GDAXI": 23500, "^FTSE": 9200, "^STOXX50E": 5400, "^N225": 42000, "^HSI": 25000,
         "000001.SS": 3700, "^BSESN": 82000, "^BVSP": 140000, "^GSPTSE": 28000, "^TNX": 4.2, "DX-Y.NYB": 99,
         "EURUSD=X": 1.15, "USDJPY=X": 150, "GBPUSD=X": 1.33, "USDCAD=X": 1.39, "USDNOK=X": 10.2, "AUDUSD=X": .65,
-        "USDCHF=X": .81, "SIL": 45, "COPX": 48, "PL=F": 1550, "PA=F": 1300, "ZC=F": 4.3, "ZS=F": 10.6, "BTC-USD": 95000, "ETH-USD": 3500}
+        "USDCHF=X": .81, "SIL": 45, "COPX": 48, "PL=F": 1550, "PA=F": 1300, "ZC=F": 4.3, "ZS=F": 10.6, "SOL-USD": 180, "XRP-USD": 2.4, "BNB-USD": 650, "ADA-USD": .75, "DOGE-USD": .2, "AVAX-USD": 25, "LINK-USD": 16, "LTC-USD": 95, "COIN": 280, "MSTR": 350, "BTC-USD": 95000, "ETH-USD": 3500}
 assets = []
 for t, n, k, r, s in U:
     ld = special.get(t, L.get(s, {"m": .5}))
