@@ -153,3 +153,5 @@ html:not(.ouvert) .wrap, html:not(.ouvert) #fiche{visibility:hidden}
 .vr-boite .vr-lien{background:transparent;color:var(--muted);font:500 15px/1 var(--f-body);padding:8px}
 .vr-boite .vr-bio{background:var(--up);color:#062}
 .item .rang{color:var(--muted);font-family:var(--f-num);font-weight:500}
+/* Référence et Période : boutons sur plusieurs lignes, tout est visible sans glisser */
+#c-drv,#c-win{flex-wrap:wrap;overflow-x:visible}
