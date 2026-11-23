@@ -4,7 +4,8 @@
 const MOTEURS = [
   ["CL=F","Pétrole WTI","le pétrole"],["BZ=F","Pétrole Brent","le Brent"],["GC=F","Or","l'or"],
   ["NG=F","Gaz naturel","le gaz"],["HG=F","Cuivre","le cuivre"],["DX-Y.NYB","Dollar","le dollar"],
-  ["^GSPC","S&P 500","le S&P 500"],["^IXIC","Nasdaq","le Nasdaq"],["BTC-USD","Bitcoin","le bitcoin"],["^TNX","Taux US","les taux US"]
+  ["^GSPC","S&P 500","le S&P 500"],["^IXIC","Nasdaq","le Nasdaq"],["BTC-USD","Bitcoin","le bitcoin"],["^TNX","Taux US","les taux US"],
+  ["^GDAXI","GER40","le GER40"],["^TECDAX","TecDAX","le TecDAX"]
 ];
 const PERIODES = [["m5","5 min"],["m10","10 min"],["m15","15 min"],["h1","1 heure"],["h4","4 heures"],["w1","1 semaine"],[21,"1 mois"],[63,"3 mois"],[126,"6 mois"],[250,"1 an"]];
 const NOMS_PERIODE = {m5:"bougies de 5 min",m10:"bougies de 10 min",m15:"bougies de 15 min",h1:"bougies d'1 heure",h4:"bougies de 4 heures",w1:"bougies d'1 semaine, sur 1 an"};
